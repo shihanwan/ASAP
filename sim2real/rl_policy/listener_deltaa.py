@@ -9,7 +9,7 @@ from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
 import threading
-from pynput import keyboard
+from sshkeyboard import listen_keyboard
 import os
 import argparse
 import yaml
@@ -89,26 +89,23 @@ class DataLogger(Node):
         self.get_logger().info("Buffer cleared.")
 
     def start_key_listener(self):
-        """Start a key listener using pynput."""
+        """Start a key listener using sshkeyboard (works over SSH)."""
         def on_press(key):
             try:
-                if key.char == ";":
-
+                if key == ";":
                     self.start_recording = True
                     self.clear_buffer()
                     self.get_logger().info("Start recording for episode {}".format(self.motion_episode_cnt))
-                elif key.char == "'":
+                elif key == "'":
                     self.start_recording = False
                     self.get_logger().info("Stop recording for episode {}".format(self.motion_episode_cnt))
                     self.process_and_save_data()
                     self.clear_buffer()
                     self.motion_episode_cnt += 1
-            except AttributeError:
+            except Exception:
                 pass  # Handle special keys if needed
 
-        listener = keyboard.Listener(on_press=on_press)
-        listener.start()
-        listener.join()  # Keep the thread alive
+        listen_keyboard(on_press=on_press)
 
     # Handler for Unitree low state messages
     def LowStateHandler(self, msg):
