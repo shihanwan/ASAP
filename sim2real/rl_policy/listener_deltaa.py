@@ -9,7 +9,7 @@ from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
 import threading
-from sshkeyboard import listen_keyboard
+import select
 import os
 import argparse
 import yaml
@@ -89,23 +89,33 @@ class DataLogger(Node):
         self.get_logger().info("Buffer cleared.")
 
     def start_key_listener(self):
-        """Start a key listener using sshkeyboard (works over SSH)."""
-        def on_press(key):
+        """Start a key listener using stdin (works reliably over SSH)."""
+        print("\n" + "="*50)
+        print("CONTROLS (type key + press Enter):")
+        print("  ;  = START recording")
+        print("  '  = STOP and save")
+        print("  q  = Quit")
+        print("="*50 + "\n")
+        
+        while True:
             try:
-                if key == ";":
-                    self.start_recording = True
-                    self.clear_buffer()
-                    self.get_logger().info("Start recording for episode {}".format(self.motion_episode_cnt))
-                elif key == "'":
-                    self.start_recording = False
-                    self.get_logger().info("Stop recording for episode {}".format(self.motion_episode_cnt))
-                    self.process_and_save_data()
-                    self.clear_buffer()
-                    self.motion_episode_cnt += 1
+                if select.select([sys.stdin], [], [], 0.1)[0]:
+                    key = sys.stdin.readline().strip()
+                    if key == ";":
+                        self.start_recording = True
+                        self.clear_buffer()
+                        self.get_logger().info("Start recording for episode {}".format(self.motion_episode_cnt))
+                    elif key == "'":
+                        self.start_recording = False
+                        self.get_logger().info("Stop recording for episode {}".format(self.motion_episode_cnt))
+                        self.process_and_save_data()
+                        self.clear_buffer()
+                        self.motion_episode_cnt += 1
+                    elif key == "q":
+                        self.get_logger().info("Quitting...")
+                        break
             except Exception:
-                pass  # Handle special keys if needed
-
-        listen_keyboard(on_press=on_press)
+                pass  # Handle any errors gracefully
 
     # Handler for Unitree low state messages
     def LowStateHandler(self, msg):
