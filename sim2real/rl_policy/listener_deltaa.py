@@ -43,8 +43,6 @@ class DataLogger(Node):
         
         self.start_recording = False
         self.motion_episode_cnt = 0
-        self.key_listener_thread = threading.Thread(target=self.start_key_listener, daemon=True)
-        self.key_listener_thread.start()
 
         # Initialize buffer for high-frequency data (200 Hz)
         self.obs_buffer = deque(maxlen=buffer_size)  # Buffer size is 200*300 = 60000
@@ -52,7 +50,7 @@ class DataLogger(Node):
         # Initialize subscribers for mocap data
         self.create_subscription(Odometry, "/odometry", self.mocap_callback, 10)
 
-        # Initialize subscribers for Unitree data
+        # Initialize subscribers for Unitree data (MUST happen before keyboard thread starts)
         self.sub_state = ChannelSubscriber("rt/lowstate", LowState_)
         self.sub_state.Init(self.LowStateHandler, 10)
                 
@@ -71,8 +69,6 @@ class DataLogger(Node):
         self.buffer_rate = buffer_rate  # Hz
         self.buffer_timer = self.create_timer(1.0 / self.buffer_rate, self.buffer_update_callback)
 
-        self.get_logger().info("DataLogger node initialized.")
-
         # Initialize latest data holders
         self.latest_low_state = None
         self.latest_low_cmd = None
@@ -80,6 +76,12 @@ class DataLogger(Node):
         
         # Save path for the .npz file
         self.save_path = save_path
+
+        self.get_logger().info("DataLogger node initialized.")
+
+        # Start keyboard listener AFTER all subscribers are initialized
+        self.key_listener_thread = threading.Thread(target=self.start_key_listener, daemon=True)
+        self.key_listener_thread.start()
 
     def clear_buffer(self):
         """
