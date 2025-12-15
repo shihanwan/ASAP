@@ -189,6 +189,7 @@ class DecoupledLocomotionStandPolicy(BasePolicy):
         return scaled_policy_action
     
 if __name__ == "__main__":
+    print("DEBUG: Starting main...")
 
     parser = argparse.ArgumentParser(description='Robot')
     parser.add_argument('--config', type=str, default='config/h1.yaml', help='config file')
@@ -196,6 +197,12 @@ if __name__ == "__main__":
     parser.add_argument('--use_jit', action='store_true', default=False, help='use jit')
     parser.add_argument('--use_mocap', action='store_true', default=False, help='use mocap')
     args = parser.parse_args()
+
+    print("DEBUG: Config loaded")
+    rclpy.init(args=None)
+    print("DEBUG: rclpy initialized")
+    node = rclpy.create_node('simple_node')
+    print("DEBUG: Node created")
 
     with open(args.config) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
