@@ -59,3 +59,5 @@ AMASS/*
 *.sh
 *.txt
 
+venv/
+onnx/

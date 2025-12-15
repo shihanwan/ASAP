@@ -8,7 +8,7 @@ ASSET_FILE: "g1_29dof.urdf" # Robot Asset File
 ### REAL
 DOMAIN_ID: 0 # Domain id
 # Interface
-INTERFACE: "lo" # Yuanhang: in simulation, lo0 for mac, lo for linux
+INTERFACE: "eth0" # Yuanhang: in simulation, lo0 for mac, lo for linux
 
 ## SIM
 # DOMAIN_ID: 0 # Domain id
