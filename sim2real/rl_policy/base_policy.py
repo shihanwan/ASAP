@@ -27,6 +27,7 @@ from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowState_ as LowState_hg
 from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber, ChannelFactoryInitialize
 from unitree_sdk2py.idl.unitree_go.msg.dds_ import WirelessController_
 from unitree_sdk2py.utils.crc import CRC
+from unitree_sdk2py.comm.motion_switcher.motion_switcher_client import MotionSwitcherClient
 
 class BasePolicy:
     def __init__(self, 
@@ -51,8 +52,12 @@ class BasePolicy:
         else:
             ChannelFactoryInitialize(config["DOMAIN_ID"])
         
-        self.state_processor = StateProcessor(config)
+        # Release high-level mode to enable low-level control
+        self._enter_low_level_mode()
+        
+        # Create command sender FIRST (publisher), then state processor (subscriber)
         self.command_sender = CommandSender(config)
+        self.state_processor = StateProcessor(config)
 
         self.setup_policy(model_path, use_jit)
 
@@ -137,6 +142,35 @@ class BasePolicy:
             self.key_listener_thread = threading.Thread(target=self.start_key_listener, daemon=True)
             self.key_listener_thread.start()
     
+    def _enter_low_level_mode(self):
+        """Release high-level controller to enable low-level motor control."""
+        print("🔧 Entering low-level mode...")
+        try:
+            msc = MotionSwitcherClient()
+            msc.SetTimeout(5.0)
+            msc.Init()
+            
+            status, result = msc.CheckMode()
+            print(f"   Current mode: {result}")
+            
+            attempts = 0
+            max_attempts = 10
+            while result.get('name') and attempts < max_attempts:
+                attempts += 1
+                print(f"   Releasing mode '{result.get('name')}'...")
+                msc.ReleaseMode()
+                time.sleep(1)
+                status, result = msc.CheckMode()
+                print(f"   Mode after release: {result}")
+            
+            if result.get('name'):
+                print(f"   ⚠️ Warning: Could not release mode after {max_attempts} attempts")
+            else:
+                print("   ✅ Robot is in low-level mode!")
+        except Exception as e:
+            print(f"   ⚠️ MotionSwitcher error: {e}")
+            print("   Continuing anyway...")
+
     def WirelessControllerHandler(self, msg: WirelessController_):
         self.wc_msg = msg
 
