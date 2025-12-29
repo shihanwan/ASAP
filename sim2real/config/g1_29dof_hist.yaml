@@ -8,7 +8,7 @@ ASSET_FILE: "g1_29dof.urdf" # Robot Asset File
 ### REAL
 DOMAIN_ID: 0 # Domain id
 # Interface
-INTERFACE: "eth0" # Yuanhang: in simulation, lo0 for mac, lo for linux
+INTERFACE: "eno2" # Real robot ethernet interface (use "lo" for simulation)
 
 ## SIM
 # DOMAIN_ID: 0 # Domain id
@@ -388,7 +388,7 @@ mimic_robot_types: {
   "side_jump_level3": "g1_29dof_anneal_23dof",
 
 
-
+  "one_leg_stand": "g1_29dof_anneal_23dof",
 }
 
 mimic_models: {
@@ -414,6 +414,7 @@ mimic_models: {
   "side_jump_level3": "model_245000.onnx",
 
 
+  "one_leg_stand": "model_35900.onnx",
 
 }
 
@@ -535,7 +536,13 @@ start_upper_body_dof_pos: {
   ],
 
 
-
+  "one_leg_stand": [
+    0.0, 0.0, 0.0,     # waist (yaw, roll, pitch)
+    0.0, 0.3, 0.0, 1.0, # left arm (shoulder pitch/roll/yaw, elbow)
+    0.0, 0.0, 0.0,     # left wrist
+    0.0, -0.3, 0.0, 1.0, # right arm
+    0.0, 0.0, 0.0      # right wrist
+  ],
 
 }
 
@@ -566,6 +573,6 @@ motion_length_s: {
   "side_jump_level1": 3.06,
   "side_jump_level2": 3.56,
   "side_jump_level3": 3.66,
-
-
+  
+  "one_leg_stand": 5.0,
 }

@@ -397,10 +397,20 @@ class MotionTrackingDecLocoPolicy(BasePolicy):
                 obs = self.prepare_obs_for_rl(robot_state_data)
                 if self.policy_locomotion_mimic_flag:
                     policy_action = np.clip(self.policy(obs), -100, 100)
+                    # DEBUG: Print action stats every 50 frames
+                    if hasattr(self, '_debug_counter'):
+                        self._debug_counter += 1
+                    else:
+                        self._debug_counter = 0
+                    if self._debug_counter % 50 == 0:
+                        print(f"[DEBUG] obs shape: {obs.shape}, action shape: {policy_action.shape}")
+                        print(f"[DEBUG] action min: {policy_action.min():.4f}, max: {policy_action.max():.4f}, mean: {np.abs(policy_action).mean():.4f}")
                     full_policy_action = np.zeros((1, self.num_dofs))
                     full_policy_action[:, self.policy_mimic_robot_dofs[self.policy_mimic_idx]] = policy_action
                     self.last_action = full_policy_action.copy()
                     scaled_policy_action = full_policy_action * self.policy_action_scale
+                    # Return mimic policy actions
+                    return scaled_policy_action
                 else:
                     # Go to Phase 4, doing nothing here
                     pass
@@ -465,11 +475,12 @@ class MotionTrackingDecLocoPolicy(BasePolicy):
             print(f"Current policy: locomotion")
         else:
             print(f"Current policy: mimic[{self.policy_mimic_idx}]")
-            print(f"Current checkpoint path: {self.mimic_model_paths[self.policy_mimic_idx]}")
-        print(f"Current mimic policy name: {self.policy_mimic_names[self.policy_mimic_idx]}")
+        policy_name = self.policy_mimic_names[self.policy_mimic_idx]
+        print(f"Current mimic policy name: {policy_name}")
         print(f"Current motion length: {self.motion_length_s[self.policy_mimic_idx]}")
-        # print checkpint path
-        print(f"Current checkpoint path: {self.mimic_model_paths[self.policy_mimic_idx]}")
+        # print checkpoint path
+        model_file = self.config.get("mimic_models", {}).get(policy_name, "unknown")
+        print(f"Current checkpoint path: {self.mimic_model_paths}/{policy_name}/{model_file}")
         
 
     def handle_joystick_button(self, cur_key):
